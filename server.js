@@ -34,15 +34,18 @@ app.get('/api/timestamp/:timestamp', (req, res) => {
 		} catch {
 			hasError = true
 		}
-	} else if (new Date(timestamp)) date = new Date(timestamp)
-	else hasError = true
+	} else {
+		date = new Date(timestamp)
+
+		if (date.toString() === 'Invalid Date') hasError = true
+	}
 
 	!hasError
 		? res.json({
 				unix: date.getTime(),
 				utc: date.toUTCString(),
 		  })
-		: res.json({ error: 'Invalid date' })
+		: res.json({ error: 'Invalid Date' })
 })
 
 // listen for requests :)
