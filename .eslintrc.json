@@ -1,0 +1,28 @@
+{
+	"env": {
+		"browser": true,
+		"node": true,
+		"commonjs": true
+	},
+	"extends": "eslint:recommended",
+	"parserOptions": {
+		"ecmaVersion": 11
+	},
+	"rules": {
+		"indent": [
+			"error",
+			"tab",
+
+			{
+				"ignoredNodes": [
+					"CallExpression > FunctionExpression.callee > BlockStatement.body"
+				],
+				"offsetTernaryExpressions": true
+			}
+		],
+		"linebreak-style": ["error", "windows"],
+		"quotes": ["error", "single"],
+		"semi": ["error", "never"],
+		"no-mixed-spaces-and-tabs": ["error", "smart-tabs"]
+	}
+}
