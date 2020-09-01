@@ -1,29 +1,29 @@
-// server.js
-// where your node app starts
+const express = require('express')
+const app = express()
+const requestIp = require('request-ip')
 
-// init project
-var express = require('express')
-var app = express()
-
-// enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-// so that your API is remotely testable by FCC
-var cors = require('cors')
+// enable CORS
+const cors = require('cors')
 app.use(cors({ optionSuccessStatus: 200 })) // some legacy browsers choke on 204
 
-// http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'))
+app.use(requestIp.mw())
 
-// http://expressjs.com/en/starter/basic-routing.html
+const apiRouter = express.Router()
+
 app.get('/', function (req, res) {
 	res.sendFile(__dirname + '/views/index.html')
 })
 
-// your first API endpoint...
-app.get('/api/hello', function (req, res) {
+apiRouter.get('/hello', function (req, res) {
 	res.json({ greeting: 'hello API' })
 })
 
-app.get('/api/timestamp/:timestamp', (req, res) => {
+apiRouter.get('/timestamp/', (req, res) => {
+	res.json({ unix: Date.now(), utc: Date() })
+})
+
+apiRouter.get('/timestamp/:timestamp', (req, res) => {
 	let timestamp = req.params.timestamp,
 		date,
 		hasError = false
@@ -48,7 +48,20 @@ app.get('/api/timestamp/:timestamp', (req, res) => {
 		: res.json({ error: 'Invalid Date' })
 })
 
-// listen for requests :)
-var listener = app.listen(process.env.PORT, function () {
+apiRouter.get('/whoami', (req, res) => {
+	const ipaddress = req.clientIp
+	const language = req.headers['accept-language']
+	const software = req.headers['user-agent']
+
+	res.json({
+		ipaddress,
+		language,
+		software,
+	})
+})
+
+app.use('/api', apiRouter)
+
+let listener = app.listen(process.env.PORT, function () {
 	console.log('Your app is listening on port ' + listener.address().port)
 })
