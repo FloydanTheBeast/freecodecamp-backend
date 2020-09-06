@@ -17,7 +17,8 @@
 				"ignoredNodes": [
 					"CallExpression > FunctionExpression.callee > BlockStatement.body"
 				],
-				"offsetTernaryExpressions": true
+				"offsetTernaryExpressions": true,
+				"flatTernaryExpressions": true
 			}
 		],
 		"linebreak-style": ["error", "windows"],
