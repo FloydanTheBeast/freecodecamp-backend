@@ -1,16 +1,10 @@
 const mongoose = require('mongoose')
-const autoIncrement = require('mongoose-auto-increment')
+const autoIncrement = require('mongoose-auto-increment-reworked')
+	.MongooseAutoIncrementID
 
-const connection = mongoose.createConnection('mongodb://localhost:27017/db', {
-	useNewUrlParser: true,
-	useUnifiedTopology: true,
-})
 const Schema = mongoose.Schema
 
-autoIncrement.initialize(connection, {
-	useNewUrlParser: true,
-	useUnifiedTopology: true,
-})
+autoIncrement.initialise()
 
 const urlSchema = new Schema({
 	url: {
@@ -19,6 +13,9 @@ const urlSchema = new Schema({
 	},
 })
 
-urlSchema.plugin(autoIncrement.plugin, 'Url')
+urlSchema.plugin(autoIncrement.plugin, {
+	modelName: 'Url',
+	startAt: 1,
+})
 
 module.exports = urlSchema

@@ -13,7 +13,15 @@ mongoose
 		useNewUrlParser: true,
 		useUnifiedTopology: true,
 	})
-	.then(() => console.log('MongoDB is running'))
+	.then(() => {
+		console.log('MongoDB is running')
+
+		URL.collection
+			.drop()
+			.catch(() => console.log('Error while dropping the table'))
+
+		URL._resetCount()
+	})
 
 // enable CORS
 const cors = require('cors')
@@ -127,8 +135,4 @@ app.use('/api', apiRouter)
 
 let listener = app.listen(process.env.PORT || 8080, function () {
 	console.log('Your app is listening on port ' + listener.address().port)
-	URL.collection
-		.drop()
-		.catch((err) => console.log('Error while dropping the table'))
-	console.log('The server has closed, collenction dropped')
 })
