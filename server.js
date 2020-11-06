@@ -6,11 +6,12 @@ const urlRegex = require('url-regex')
 const addProtocol = require('./utils/addProtocol')
 const urlSchema = require('./schemas/url')
 const userSchema = require('./schemas/user')
+require('dotenv').config()
 
 const app = express()
 
 mongoose
-	.connect(process.env.DB_URI || 'mongodb://localhost:27017/db', {
+	.connect(process.env.DB_URI || process.env.MONGODB_URL, {
 		useNewUrlParser: true,
 		useUnifiedTopology: true,
 	})
@@ -164,25 +165,26 @@ exerciseRouter.get('/users', (req, res) => {
 exerciseRouter.post('/add', (req, res) => {
 	const _id = req.body['userId']
 
-	if (!_id) {
-		res.sendStatus(400)
-		return
-	}
-
 	User.findById(_id, (err, user) => {
-		if (err) res.status(404).send('No user found')
+		if (!user) {
+			res.status(404).send('No user found')
+			return
+		}
 
 		// TODO: Validate all form values
 		let { description, duration, date } = req.body
 
+		duration = Number(duration)
+
 		if (!date) date = new Date()
+		else date = new Date(date)
 
 		user.exercises.push({ description, duration, date })
 
 		res.status(200).json({
 			_id: user._id,
 			username: user.username,
-			date,
+			date: date.toDateString(),
 			duration,
 			description,
 		})
@@ -205,8 +207,13 @@ exerciseRouter.get('/log', (req, res) => {
 			return
 		}
 
-		const { from, to, limit } = req.query
-		console.log(user)
+		let { from, to, limit } = req.query
+
+		if (from) from = new Date(from)
+
+		if (to) to = new Date(to)
+
+		if (limit) limit = Number(limit)
 
 		let counter = 0
 
@@ -215,11 +222,18 @@ exerciseRouter.get('/log', (req, res) => {
 		if (from || to || limit)
 			exercises = exercises.filter((exercise) => {
 				return (
-					from ^ (exercise.date >= new Date(from)) &&
-					to ^ (exercise.date <= new Date(to)) &&
-					counter++ < limit
+					(!from || exercise.date >= from) &&
+					(!to || exercise.date <= to) &&
+					(!limit || counter++ < limit)
 				)
 			})
+
+		console.log({
+			_id: user._id,
+			username: user.username,
+			count: exercises.length,
+			log: exercises,
+		})
 
 		res.status(200).json({
 			_id: user._id,
