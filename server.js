@@ -173,7 +173,9 @@ exerciseRouter.post('/add', (req, res) => {
 		if (err) res.status(404).send('No user found')
 
 		// TODO: Validate all form values
-		const { description, duration, date } = req.body
+		let { description, duration, date } = req.body
+
+		if (!date) date = new Date()
 
 		user.exercises.push({ description, duration, date })
 
@@ -213,8 +215,8 @@ exerciseRouter.get('/log', (req, res) => {
 		if (from || to || limit)
 			exercises = exercises.filter((exercise) => {
 				return (
-					from ^ (exercise.date >= from) &&
-					to ^ (exercise.date <= to) &&
+					from ^ (exercise.date >= new Date(from)) &&
+					to ^ (exercise.date <= new Date(to)) &&
 					counter++ < limit
 				)
 			})
