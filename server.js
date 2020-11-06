@@ -5,6 +5,7 @@ const bodyParser = require('body-parser')
 const urlRegex = require('url-regex')
 const addProtocol = require('./utils/addProtocol')
 const urlSchema = require('./schemas/url')
+const userSchema = require('./schemas/user')
 
 const app = express()
 
@@ -27,15 +28,19 @@ mongoose
 const cors = require('cors')
 
 app.use(cors({ optionSuccessStatus: 200 })) // some legacy browsers choke on 204
-
 app.use(express.static('public'))
 app.use(requestIp.mw())
 
+// use urlencoded parser
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: true }))
+
 const apiRouter = express.Router()
 const shortUrlRouter = express.Router()
-const urlencodedParser = bodyParser.urlencoded({ extended: false })
+const exerciseRouter = express.Router()
 
 const URL = mongoose.model('url', urlSchema)
+const User = mongoose.model('user', userSchema)
 
 app.get('/', function (req, res) {
 	res.sendFile(__dirname + '/views/index.html')
@@ -87,7 +92,7 @@ apiRouter.get('/whoami', (req, res) => {
 })
 
 shortUrlRouter
-	.post('/new', urlencodedParser, (req, res) => {
+	.post('/new', (req, res) => {
 		const url = req.body.url
 		const urlObject = new URL({ url })
 
@@ -130,6 +135,100 @@ shortUrlRouter
 		})
 	})
 
+exerciseRouter.post('/new-user', (req, res) => {
+	const username = req.body['username']
+
+	if (!username) {
+		res.sendStatus(400)
+		return
+	}
+	const user = new User({ username })
+
+	user.save()
+		.then((newUser) =>
+			res
+				.status(200)
+				.send({ _id: newUser._id, username: newUser.username })
+		)
+		.catch(() => res.status(400).send('Username already taken'))
+})
+
+exerciseRouter.get('/users', (req, res) => {
+	User.find({}, (err, users) => {
+		res.send(
+			users.map((user) => ({ _id: user._id, username: user.username }))
+		)
+	})
+})
+
+exerciseRouter.post('/add', (req, res) => {
+	const _id = req.body['userId']
+
+	if (!_id) {
+		res.sendStatus(400)
+		return
+	}
+
+	User.findById(_id, (err, user) => {
+		if (err) res.status(404).send('No user found')
+
+		// TODO: Validate all form values
+		const { description, duration, date } = req.body
+
+		user.exercises.push({ description, duration, date })
+
+		res.status(200).json({
+			_id: user._id,
+			username: user.username,
+			date,
+			duration,
+			description,
+		})
+
+		user.save()
+	})
+})
+
+exerciseRouter.get('/log', (req, res) => {
+	const { userId } = req.query
+
+	User.findById(userId, (err, user) => {
+		if (err) {
+			res.send(err)
+			return
+		}
+
+		if (!user) {
+			res.status(403).send('Unknown userId')
+			return
+		}
+
+		const { from, to, limit } = req.query
+		console.log(user)
+
+		let counter = 0
+
+		let { exercises } = user
+
+		if (from || to || limit)
+			exercises = exercises.filter((exercise) => {
+				return (
+					from ^ (exercise.date >= from) &&
+					to ^ (exercise.date <= to) &&
+					counter++ < limit
+				)
+			})
+
+		res.status(200).json({
+			_id: user._id,
+			username: user.username,
+			count: exercises.length,
+			log: exercises,
+		})
+	})
+})
+
+apiRouter.use('/exercise', exerciseRouter)
 apiRouter.use('/shorturl', shortUrlRouter)
 app.use('/api', apiRouter)
 
