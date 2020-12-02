@@ -6,6 +6,10 @@ const urlRegex = require('url-regex')
 const addProtocol = require('./utils/addProtocol')
 const urlSchema = require('./schemas/url')
 const userSchema = require('./schemas/user')
+const multer = require('multer')
+
+const upload = multer()
+
 require('dotenv').config()
 
 const app = express()
@@ -29,7 +33,7 @@ mongoose
 const cors = require('cors')
 
 app.use(cors({ optionSuccessStatus: 200 })) // some legacy browsers choke on 204
-app.use(express.static('public'))
+app.use('/public', express.static(process.cwd() + '/public'))
 app.use(requestIp.mw())
 
 // use urlencoded parser
@@ -241,6 +245,18 @@ exerciseRouter.get('/log', (req, res) => {
 			count: exercises.length,
 			log: exercises,
 		})
+	})
+})
+
+apiRouter.get('/fileanalyse', (_, res) =>
+	res.sendFile(__dirname + '/views/fileanalyse.html')
+)
+
+apiRouter.post('/fileanalyse', upload.single('upfile'), (req, res) => {
+	res.json({
+		name: req.file.originalname,
+		type: req.file.mimetype,
+		size: req.file.size,
 	})
 })
 
